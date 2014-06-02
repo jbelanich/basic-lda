@@ -2,13 +2,7 @@ import numpy as n
 import scipy.sparse as sparse
 from scipy import *
 
-numTopics = 20
-
-class Document:
-
-	def __init__(self):
-		self.raw = ""
-		self.words = []
+numTopics = 10
 
 
 class LDAModel:
@@ -19,6 +13,10 @@ class LDAModel:
 			Beta represent the hyperparameters of the model. If none are
 			provided, we generate them.
 		"""
+		self.numDocuments = corpus.shape[0]
+		self.vocabSize = corpus.shape[1]
+		self.numTopics = numTopics
+
 		if not alpha:
 			self.generateAlpha()
 		else:
@@ -30,14 +28,10 @@ class LDAModel:
 			self.__beta = beta
 
 		self.__corpus = corpus
-		self.__assignments = sparse.csc_matrix(corpus.shape, dtype=int64)
+		self.__assignments = sparse.lil_matrix(corpus.shape, dtype=int64)
 
-		self.numDocuments = corpus.shape[0]
-		self.vocabSize = corpus.shape[1]
-		self.numTopics = numTopics
-
-		self.__vocabCounts = sparse.csc_matrix((self.vocabSize,self.numTopics))
-		self.__documentCounts = sparse.csc_matrix((self.numDocuments, self.numTopics))
+		self.__vocabCounts = sparse.lil_matrix((self.vocabSize,self.numTopics))
+		self.__documentCounts = sparse.lil_matrix((self.numDocuments, self.numTopics))
 
 		self.initialize()
 
@@ -59,10 +53,99 @@ class LDAModel:
 			Runs gibbs sampling step for the provided number of iterations.
 		"""
 
-		pass
+		for i in xrange(iterations):
+			print "BEGIN ITERATION", i
+			print "============================="
+			self.gibbsStep()
+
+	def gibbsStep(self):
+		"""
+			Refresh all topic assignments.
+		"""
+
+		rows, cols = self.__corpus.nonzero()
+		for row, col in zip(rows,cols):
+			#construct probability dist over topic assignments
+			dist = self.topicDistribution(row,col)
+			print dist
+			newAssignment = n.random.choice(self.numTopics, p=dist)
+			if newAssignment != self.__assignments[row,col]:
+				self.updateAssignment(row,col,newAssignment)
+
+	def updateAssignment(self, doc, word, newTopic):
+		"""
+			Update the topic for a given word in a given document, and all relevant counts.
+		"""
+		oldTopic = self.__assignments[doc,word]
+		self.__documentCounts[doc,oldTopic] -= self.__corpus[doc,word]
+		self.__documentCounts[doc,newTopic] += self.__corpus[doc,word]
+		self.__vocabCounts[word,oldTopic] -= self.__corpus[doc,word]
+		self.__vocabCounts[word,newTopic] += self.__corpus[doc,word]
+		self.__assignments[doc,word] = newTopic
+
+		assert (self.__vocabCounts[word,oldTopic] >= 0)
+		assert (self.__documentCounts[doc,oldTopic] >= 0)
+
+	def getExcludedVocabCount(self, word, topic, exclude):
+		(m,n) = exclude
+
+		#toSubtract = self.__corpus[m,n] if self.__assignments[m,n] == topic else 0
+		if self.__assignments[m,n] == topic and word == n:
+			toSubtract = self.__corpus[m,n]
+		else:
+			toSubtract = 0
+
+		if (self.__vocabCounts[word,topic] - toSubtract) < 0:
+			print "Vocab Counts Problem: "
+			print self.__vocabCounts[word,topic]
+			print toSubtract
+
+		assert (self.__vocabCounts[word,topic] - toSubtract >= 0)
+
+		return self.__vocabCounts[word,topic] - toSubtract
+
+	def getExcludedDocumentCount(self, document, topic, exclude):
+		(m,n) = exclude
+
+		if self.__assignments[m,n] == topic and m == document:
+			toSubtract = self.__corpus[m,n]
+		else:
+			toSubtract = 0
+
+		if (self.__documentCounts[document,topic] - toSubtract) < 0:
+			print "Document Counts Problem: "
+			print self.__documentCounts[document,topic]
+			print toSubtract
+
+		assert (self.__documentCounts[document,topic] - toSubtract >= 0)
+
+		return self.__documentCounts[document,topic] - toSubtract
+
+	def getVocabNorm(self, topic, exclude):
+		counts = []
+		rows, cols = self.__vocabCounts[:,topic].nonzero()
+		for r in rows:
+			counts.append(self.getExcludedVocabCount(r, topic, exclude) + self.__beta[r])
+
+		return sum(counts)
+
+
+	def topicDistribution(self, document, word):
+		#first calculate vocabulary normalization
+		dist = []
+		for i in xrange(self.numTopics):
+			prob = self.getExcludedDocumentCount(document,i,(document,word)) + self.__alpha[i]
+			vocabProb = self.getExcludedVocabCount(word, i, (document,word)) + self.__beta[word]
+			vocabNorm = self.getVocabNorm(i, (document, word))
+			dist.append(prob * (vocabProb/vocabNorm))
+
+		return dist/sum(dist)
+
+	def getAssignments(self):
+		return self.__assignments
 
 	def generateAlpha(self):
-		pass
+		self.__alpha = n.ones(self.numTopics)
 
 	def generateBeta(self):
-		pass
+		self.__beta = n.ones(self.vocabSize)

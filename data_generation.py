@@ -18,3 +18,15 @@ def loadTexts():
 		corpus.append(''.join(s))
 
 	return corpus
+
+def getWordsForTopic(corpus,assignments,vectorizer):
+	features = vectorizer.get_feature_names()
+
+	rows,cols = corpus.nonzero()
+
+	for row in rows:
+		print "Corpus ", row
+		for col in cols:
+			print features[col], ": ", assignments[row,col]
+
+		print " ===================== "
