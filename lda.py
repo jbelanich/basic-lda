@@ -20,13 +20,13 @@ class LDAModel:
 			provided, we generate them.
 		"""
 		if not alpha:
-			generateAlpha()
-		else
+			self.generateAlpha()
+		else:
 			self.__alpha = alpha
 
 		if not beta:
-			generateBeta()
-		else
+			self.generateBeta()
+		else:
 			self.__beta = beta
 
 		self.__corpus = corpus
@@ -37,15 +37,29 @@ class LDAModel:
 		self.numTopics = numTopics
 
 		self.__vocabCounts = sparse.csc_matrix((self.vocabSize,self.numTopics))
-		self.__documentCounts = sparse.
+		self.__documentCounts = sparse.csc_matrix((self.numDocuments, self.numTopics))
 
-		initialize()
+		self.initialize()
 
 	def initialize(self):
 		"""
 			Initializes the assignments and the counts based on said assignments.
 			Right now, just gives each word a random topic.
 		"""
+
+		rows, cols = self.__corpus.nonzero()
+		for row, col in zip(rows,cols):
+			assignment = n.random.randint(0,self.numTopics)
+			self.__assignments[row,col] = assignment
+			self.__documentCounts[row, assignment] += self.__corpus[row,col]
+			self.__vocabCounts[col, assignment] += self.__corpus[row,col]
+
+	def gibbs(self, iterations):
+		"""
+			Runs gibbs sampling step for the provided number of iterations.
+		"""
+
+		pass
 
 	def generateAlpha(self):
 		pass
