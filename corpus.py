@@ -1,7 +1,12 @@
 class CountMatrix:
 
-	def __init__(self, data):
-		self.__data = data
+	def __init__(self, data=None, numDocs=None):
+		if data:
+			self.__data = data
+		else:
+			self.__data = []
+			for i in xrange(numDocs):
+				self.__data.append({})
 
 	def __getitem__(self, pos):
 		row,col = pos
