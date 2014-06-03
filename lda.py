@@ -58,11 +58,11 @@ class LDAModel:
 		"""
 		for row, col in self.__corpus.nonzero():
 			#construct probability dist over topic assignments
+			self.removeAssignmentsForWord(row,col)
 			dist = self.topicDistributionUnorm(row,col)
-			test = n.random.uniform(0,dist[len(dist)-1],1)
+			test = n.random.uniform(0,sum(dist),1)
 			newAssignment = self.getAssignmentFromUniform(test,dist)
-			if newAssignment != self.__assignments[row,col]:
-				self.updateAssignment(row,col,newAssignment)
+			self.updateAssignment(row,col,newAssignment)
 
 	def getAssignmentFromUniform(self,unifSample, dist):
 		runSum = 0
@@ -79,18 +79,22 @@ class LDAModel:
 
 			self.__vocabMarginals[k] = sum(counts)
 
+	def removeAssignmentsForWord(self, doc, word):
+		topic = self.__assignments[doc,word]
+		wordCount = self.__corpus[doc,word]
+		self.__documentCounts[doc,topic] -= wordCount
+		self.__vocabCounts[word,topic] -= wordCount
+		self.__vocabMarginals[topic] -= wordCount
+
 	def updateAssignment(self, doc, word, newTopic):
 		"""
 			Update the topic for a given word in a given document, and all relevant counts.
 		"""
-		oldTopic = int(self.__assignments[doc,word])
+		oldTopic = self.__assignments[doc,word]
 		wordCount = self.__corpus[doc,word]
-		self.__documentCounts[doc,oldTopic] -= wordCount
 		self.__documentCounts[doc,newTopic] += wordCount
-		self.__vocabCounts[word,oldTopic] -= wordCount
 		self.__vocabCounts[word,newTopic] += wordCount
 		self.__vocabMarginals[newTopic] += wordCount
-		self.__vocabMarginals[oldTopic] -= wordCount
 		self.__assignments[doc,word] = newTopic
 
 	def getExcludedVocabCount(self, word, topic, exclude):
@@ -131,9 +135,9 @@ class LDAModel:
 	def topicDistributionUnorm(self, document, word):
 		dist = []
 		for i in xrange(self.numTopics):
-			prob = self.getExcludedDocumentCount(document, i, (document,word)) + self.__alpha
-			vocabProb = self.getExcludedVocabCount(word, i, (document,word)) + self.__beta
-			vocabNorm = self.getExcludedVocabNorm(i, (document,word))
+			prob = self.__documentCounts[document,i] + self.__alpha
+			vocabProb = self.__vocabCounts[word,i] + self.__beta
+			vocabNorm = self.__vocabMarginals[i] #don't need beta here, its already baked in
 			dist.append(prob * (vocabProb/vocabNorm))
 
 		return dist
