@@ -24,11 +24,13 @@ class LDAModel:
 		else:
 			self.__beta = beta
 
-		self.__corpus = corpus
-		self.__assignments = sparse.lil_matrix(corpus.shape, dtype=int64)
+		#self.__corpus = corpus.todense()#sparse.dok_matrix(corpus)
+		self.__corpus = n.zeros([self.__corpus.shape[0], self.__corpus.shape[1]])
+		corpus.todense(out=self.__corpus)
+		self.__assignments = n.zeros([self.__corpus.shape[0], self.__corpus.shape[1]])#sparse.dok_matrix(corpus.shape, dtype=int64)
 
-		self.__vocabCounts = sparse.lil_matrix((self.vocabSize,self.numTopics))
-		self.__documentCounts = sparse.lil_matrix((self.numDocuments, self.numTopics))
+		self.__vocabCounts = n.zeros([self.vocabSize, self.numTopics])#sparse.dok_matrix((self.vocabSize,self.numTopics))
+		self.__documentCounts = n.zeros([self.numDocuments, self.numTopics])#sparse.dok_matrix((self.numDocuments, self.numTopics))
 		self.__vocabMarginals = n.zeros([self.numTopics])
 
 		self.initialize()
@@ -55,7 +57,6 @@ class LDAModel:
 
 		for i in xrange(iterations):
 			print "BEGIN ITERATION", i
-			print "============================="
 			self.gibbsStep()
 
 	def gibbsStep(self):
@@ -66,7 +67,6 @@ class LDAModel:
 		for row, col in zip(rows,cols):
 			#construct probability dist over topic assignments
 			dist = self.topicDistribution(row,col)
-			print dist
 			newAssignment = n.random.choice(self.numTopics, p=dist)
 			if newAssignment != self.__assignments[row,col]:
 				self.updateAssignment(row,col,newAssignment)
@@ -74,8 +74,10 @@ class LDAModel:
 	def calculateVocabMarginals(self):
 		for k in xrange(self.numTopics):
 			counts = []
-			rows, cols = self.__vocabCounts[:,k].nonzero()
-			for r in set(rows):
+			#rows, cols = self.__vocabCounts[:,k].nonzero()
+			#for r in set(rows):
+			#	counts.append(self.__vocabCounts[r,k] + self.__beta[r])
+			for r in xrange(self.__vocabCounts.shape[0]):
 				counts.append(self.__vocabCounts[r,k] + self.__beta[r])
 
 			self.__vocabMarginals[k] = sum(counts)
@@ -84,7 +86,7 @@ class LDAModel:
 		"""
 			Update the topic for a given word in a given document, and all relevant counts.
 		"""
-		oldTopic = self.__assignments[doc,word]
+		oldTopic = int(self.__assignments[doc,word])
 		self.__documentCounts[doc,oldTopic] -= self.__corpus[doc,word]
 		self.__documentCounts[doc,newTopic] += self.__corpus[doc,word]
 		self.__vocabCounts[word,oldTopic] -= self.__corpus[doc,word]

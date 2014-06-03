@@ -26,7 +26,7 @@ def getWordsForTopic(corpus,assignments,vectorizer, topic):
 	rows,cols = corpus.nonzero()
 
 	for row in set(rows):
-		print "Corpus ", row
+		print "Docuent ", row
 		for col in cols:
 			if assignments[row,col] == topic:
 				print features[col], ": ", assignments[row,col]
