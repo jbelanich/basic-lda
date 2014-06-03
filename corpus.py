@@ -1,6 +1,22 @@
 class CountMatrix:
+	"""
+		A wrapper class for a list of dicts.
 
-	def __init__(self, data=None, numRows=None):
+		For example, if obj is a CountMatrix, then obj[i,j] gets
+		the thing mapped to j in the i'th dictionary.
+	"""
+
+	def __init__(self, **kwargs):
+		"""
+		Allows for two possiblities. Either you provide a list of dicts
+		to use as the data for this CountMatrix, or you provide a integer
+		giving the number of dicts in this CountMatrix.
+		"""
+		data = kwargs.get('data', None)
+		numRows = kwargs.get('numRows', None)
+
+		assert(data or numRows)
+
 		if data:
 			self._data = data
 		else:
@@ -20,18 +36,32 @@ class CountMatrix:
 		return len(self._data)
 
 	def elements(self):
-		for i in xrange(len(self._data)):
-			for key in self._data[i]:
-				yield (key, self._data[i][key])
+		"""
+		Iterates over the elements of this CountMatrix. That is,
+		returns tuples of the form (wordIndex, wordCount).
+		"""
+		for row in self._data:
+			for key in row:
+				yield (key, row[key])
 
 	def nonzero(self):
-		for i in xrange(len(self._data)):
-			for key in self._data[i]:
+		"""
+		Iterates over all of the indicies of this CountMatrix. This is,
+		returns tuples of the form (documentIndex,wordIndex).
+		"""
+		for i,row in enumerate(self._data):
+			for key in row:
 				yield (i, key)
 
 
 class Corpus(CountMatrix):
+	"""
+		A Corpus is a special kind of CountMatrix, where corpus[i,j] gives
+		us the number of occurances of the j'th word in the i'th document.
 
+		A Corpus also has a vocabulary modeled as a list of strings. The string representation
+		of the i'th word is stored at vocab[i].
+	"""
 	def __init__(self, data, vocab):
 		self.__vocab = vocab
 		self._data = data
@@ -43,16 +73,25 @@ class Corpus(CountMatrix):
 		return len(self._data)
 
 	def print_topic_classifications(self, assignments):
+		"""
+		Prints all words in all documents, with their topic assignments.
+		"""
 		for index,doc in enumerate(self._data):
 			print "Document: ", index
 			for word in doc:
 				print "\t", self.__vocab[word], ": ", assignments[index,word]
 
 	def print_words_by_topic(self, assignments, topic):
+		"""
+		Prints the set of words in the corpus that are mapped to the provided topic.
+		"""
 		for word in self.get_words_by_topic(assignments, topic):
 			print word
 
 	def get_words_by_topic(self, assignments,topic):
+		"""
+		Returns the set of words in the corpus that are mapped to the provided topic.
+		"""
 		words = set()
 		for index,doc in enumerate(self._data):
 			for word in doc:

@@ -22,8 +22,8 @@ class LDAModel:
 		self.__corpus = corpus
 		self.__assignments = CountMatrix(numRows=corpus.numRows())
 
-		self.__vocabCounts = n.zeros([self.vocabSize, self.numTopics])#sparse.dok_matrix((self.vocabSize,self.numTopics))
-		self.__documentCounts = n.zeros([self.numDocuments, self.numTopics])#sparse.dok_matrix((self.numDocuments, self.numTopics))
+		self.__vocabCounts = n.zeros([self.vocabSize, self.numTopics])
+		self.__documentCounts = n.zeros([self.numDocuments, self.numTopics])
 		self.__vocabMarginals = n.zeros([self.numTopics])
 
 		self.initialize()
@@ -33,8 +33,6 @@ class LDAModel:
 			Initializes the assignments and the counts based on said assignments.
 			Right now, just gives each word a random topic.
 		"""
-
-		#rows, cols = self.__corpus.nonzero()
 		for row, col in self.__corpus.nonzero():
 			assignment = n.random.randint(0,self.numTopics)
 			self.__assignments[row,col] = assignment
@@ -60,15 +58,19 @@ class LDAModel:
 			#construct probability dist over topic assignments
 			self.removeAssignmentsForWord(row,col)
 			dist = self.topicDistributionUnorm(row,col)
-			test = n.random.uniform(0,sum(dist),1)
-			newAssignment = self.getAssignmentFromUniform(test,dist)
+			newAssignment = self.selectTopic(dist)
 			self.updateAssignment(row,col,newAssignment)
 
-	def getAssignmentFromUniform(self,unifSample, dist):
+	def selectTopic(self, dist):
+		"""
+		Selects a topic from the provided *unnormalized* probability distribution dist.
+		"""
+		u = n.random.uniform(0,sum(dist),1)
+
 		runSum = 0
 		for index,prob in enumerate(dist):
 			runSum += prob
-			if unifSample < runSum:
+			if u < runSum:
 				return index
 
 	def calculateVocabMarginals(self):
@@ -90,49 +92,20 @@ class LDAModel:
 		"""
 			Update the topic for a given word in a given document, and all relevant counts.
 		"""
-		oldTopic = self.__assignments[doc,word]
 		wordCount = self.__corpus[doc,word]
 		self.__documentCounts[doc,newTopic] += wordCount
 		self.__vocabCounts[word,newTopic] += wordCount
 		self.__vocabMarginals[newTopic] += wordCount
 		self.__assignments[doc,word] = newTopic
 
-	def getExcludedVocabCount(self, word, topic, exclude):
-		(m,n) = exclude
-
-		if self.__assignments[m,n] == topic and word == n:
-			toSubtract = self.__corpus[m,n]
-		else:
-			toSubtract = 0
-
-		return self.__vocabCounts[word,topic] - toSubtract
-
-	def getExcludedDocumentCount(self, document, topic, exclude):
-		(m,n) = exclude
-
-		if self.__assignments[m,n] == topic and m == document:
-			toSubtract = self.__corpus[m,n]
-		else:
-			toSubtract = 0
-
-		return self.__documentCounts[document,topic] - toSubtract
-
-	def getExcludedVocabNorm(self, topic, exclude):
-		(m,n) = exclude
-
-		if self.__assignments[m,n] == topic:
-			toSubtract = self.__corpus[m,n]
-		else:
-			toSubtract = 0
-
-		return self.__vocabMarginals[topic] - toSubtract
-
-
 	def topicDistribution(self, document, word):
 		dist = self.topicDistributionUnorm
 		return dist/sum(dist)
 
 	def topicDistributionUnorm(self, document, word):
+		"""
+		Returns the *unnormalized* topic distribution for the given word in the given document.
+		"""
 		dist = []
 		for i in xrange(self.numTopics):
 			prob = self.__documentCounts[document,i] + self.__alpha
