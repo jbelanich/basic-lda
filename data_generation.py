@@ -1,5 +1,6 @@
 from sklearn.feature_extraction.text import CountVectorizer
 import numpy as np
+from corpus import *
 
 def basicCorpus():
 	texts = loadTexts()
@@ -62,3 +63,29 @@ def dailyKosBagOfWords():
 			docWords.append(vocab[int(wordIndex)-1])
 
 	return docs
+
+def dailyKosCountMatrix():
+	vocab = []
+	with open('./dailykosvocab.txt', 'r') as vocab_handle:
+		for line in vocab_handle:
+			vocab.append(line)
+
+	wordCounts = np.loadtxt('./docword.kos.txt')
+
+	docs = []
+	lastDoc = wordCounts[0,0]
+	docWords = {}
+	for i in xrange(wordCounts.shape[0]):
+		doc = int(wordCounts[i,0])
+		wordIndex = int(wordCounts[i,1])
+		wordCount = int(wordCounts[i,2])
+
+		if doc != lastDoc:
+			docs.append(docWords)
+			docWords = {}
+			lastDoc = doc
+
+		for j in xrange(int(wordCount)):
+			docWords[wordIndex] = wordCount
+
+	return CountMatrix(docs)
