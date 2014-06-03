@@ -64,7 +64,7 @@ def dailyKosBagOfWords():
 
 	return docs
 
-def dailyKosCountMatrix():
+def dailyKosCountMatrix(numDocs=None):
 	vocab = []
 	with open('./dailykosvocab.txt', 'r') as vocab_handle:
 		for line in vocab_handle:
@@ -85,7 +85,9 @@ def dailyKosCountMatrix():
 			docWords = {}
 			lastDoc = doc
 
-		for j in xrange(int(wordCount)):
-			docWords[wordIndex] = wordCount
+			if numDocs and doc > numDocs:
+				break
 
-	return CountMatrix(docs)
+		docWords[wordIndex] = wordCount
+
+	return Corpus(docs, vocab)
