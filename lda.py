@@ -61,7 +61,6 @@ class LDAModel:
 			dist = self.topicDistributionUnorm(row,col)
 			test = n.random.uniform(0,dist[len(dist)-1],1)
 			newAssignment = self.getAssignmentFromUniform(test,dist)
-			newAssignment = self.__assignments[row,col]
 			if newAssignment != self.__assignments[row,col]:
 				self.updateAssignment(row,col,newAssignment)
 
