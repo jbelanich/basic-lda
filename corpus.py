@@ -1,11 +1,11 @@
 class CountMatrix:
 
-	def __init__(self, data=None, numDocs=None):
+	def __init__(self, data=None, numRows=None):
 		if data:
 			self._data = data
 		else:
 			self._data = []
-			for i in xrange(numDocs):
+			for i in xrange(numRows):
 				self._data.append({})
 
 	def __getitem__(self, pos):
@@ -36,8 +36,27 @@ class Corpus(CountMatrix):
 		self.__vocab = vocab
 		self._data = data
 
-	def getVocabSize(self):
+	def vocabSize(self):
 		return len(self.__vocab)
 
-	def getNumDocuments(self):
-		return self.__wordCounts.numRows()
+	def numDocuments(self):
+		return len(self._data)
+
+	def print_topic_classifications(self, assignments):
+		for index,doc in enumerate(self._data):
+			print "Document: ", index
+			for word in doc:
+				print "\t", self.__vocab[word], ": ", assignments[index,word]
+
+	def print_words_by_topic(self, assignments, topic):
+		for word in self.get_words_by_topic(assignments, topic):
+			print word
+
+	def get_words_by_topic(self, assignments,topic):
+		words = set()
+		for index,doc in enumerate(self._data):
+			for word in doc:
+				if(assignments[index,word] == topic):
+					words.add(self.__vocab[word])
+
+		return words

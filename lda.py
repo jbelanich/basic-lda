@@ -2,6 +2,8 @@ import numpy as n
 import scipy.sparse as sparse
 from scipy import *
 
+from corpus import *
+
 class LDAModel:
 
 	def __init__(self, corpus, numTopics = 10, alpha=1, beta=1):
@@ -10,15 +12,15 @@ class LDAModel:
 			Beta represent the hyperparameters of the model. If none are
 			provided, we generate them.
 		"""
-		self.numDocuments = corpus.shape[0]
-		self.vocabSize = corpus.shape[1]
+		self.numDocuments = corpus.numDocuments()
+		self.vocabSize = corpus.vocabSize()
 		self.numTopics = numTopics
 
 		self.__alpha = alpha
 		self.__beta = beta
 
-		self.__corpus = sparse.lil_matrix(corpus)#sparse.dok_matrix(corpus)
-		self.__assignments = sparse.lil_matrix(corpus.shape)#n.zeros([self.__corpus.shape[0], self.__corpus.shape[1]])#sparse.dok_matrix(corpus.shape, dtype=int64)
+		self.__corpus = corpus
+		self.__assignments = CountMatrix(numRows=corpus.numRows())
 
 		self.__vocabCounts = n.zeros([self.vocabSize, self.numTopics])#sparse.dok_matrix((self.vocabSize,self.numTopics))
 		self.__documentCounts = n.zeros([self.numDocuments, self.numTopics])#sparse.dok_matrix((self.numDocuments, self.numTopics))
@@ -32,8 +34,8 @@ class LDAModel:
 			Right now, just gives each word a random topic.
 		"""
 
-		rows, cols = self.__corpus.nonzero()
-		for row, col in zip(rows,cols):
+		#rows, cols = self.__corpus.nonzero()
+		for row, col in self.__corpus.nonzero():
 			assignment = n.random.randint(0,self.numTopics)
 			self.__assignments[row,col] = assignment
 			self.__documentCounts[row, assignment] += self.__corpus[row,col]
@@ -54,8 +56,7 @@ class LDAModel:
 		"""
 			Refresh all topic assignments.
 		"""
-		rows, cols = self.__corpus.nonzero()
-		for row, col in zip(rows,cols):
+		for row, col in self.__corpus.nonzero():
 			#construct probability dist over topic assignments
 			dist = self.topicDistribution(row,col)
 			newAssignment = n.random.choice(self.numTopics, p=dist)
@@ -65,9 +66,6 @@ class LDAModel:
 	def calculateVocabMarginals(self):
 		for k in xrange(self.numTopics):
 			counts = []
-			#rows, cols = self.__vocabCounts[:,k].nonzero()
-			#for r in set(rows):
-			#	counts.append(self.__vocabCounts[r,k] + self.__beta[r])
 			for r in xrange(self.__vocabCounts.shape[0]):
 				counts.append(self.__vocabCounts[r,k] + self.__beta)
 
@@ -89,7 +87,6 @@ class LDAModel:
 	def getExcludedVocabCount(self, word, topic, exclude):
 		(m,n) = exclude
 
-		#toSubtract = self.__corpus[m,n] if self.__assignments[m,n] == topic else 0
 		if self.__assignments[m,n] == topic and word == n:
 			toSubtract = self.__corpus[m,n]
 		else:

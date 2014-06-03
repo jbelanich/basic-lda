@@ -88,6 +88,6 @@ def dailyKosCountMatrix(numDocs=None):
 			if numDocs and doc > numDocs:
 				break
 
-		docWords[wordIndex] = wordCount
+		docWords[wordIndex-1] = wordCount
 
 	return Corpus(docs, vocab)
