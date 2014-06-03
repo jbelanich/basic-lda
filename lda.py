@@ -58,10 +58,19 @@ class LDAModel:
 		"""
 		for row, col in self.__corpus.nonzero():
 			#construct probability dist over topic assignments
-			dist = self.topicDistribution(row,col)
-			newAssignment = n.random.choice(self.numTopics, p=dist)
+			dist = self.topicDistributionUnorm(row,col)
+			test = n.random.uniform(0,dist[len(dist)-1],1)
+			newAssignment = self.getAssignmentFromUniform(test,dist)
+			newAssignment = self.__assignments[row,col]
 			if newAssignment != self.__assignments[row,col]:
 				self.updateAssignment(row,col,newAssignment)
+
+	def getAssignmentFromUniform(self,unifSample, dist):
+		runSum = 0
+		for index,prob in enumerate(dist):
+			runSum += prob
+			if unifSample < runSum:
+				return index
 
 	def calculateVocabMarginals(self):
 		for k in xrange(self.numTopics):
@@ -76,12 +85,13 @@ class LDAModel:
 			Update the topic for a given word in a given document, and all relevant counts.
 		"""
 		oldTopic = int(self.__assignments[doc,word])
-		self.__documentCounts[doc,oldTopic] -= self.__corpus[doc,word]
-		self.__documentCounts[doc,newTopic] += self.__corpus[doc,word]
-		self.__vocabCounts[word,oldTopic] -= self.__corpus[doc,word]
-		self.__vocabCounts[word,newTopic] += self.__corpus[doc,word]
-		self.__vocabMarginals[newTopic] += self.__corpus[doc,word]
-		self.__vocabMarginals[oldTopic] -= self.__corpus[doc,word]
+		wordCount = self.__corpus[doc,word]
+		self.__documentCounts[doc,oldTopic] -= wordCount
+		self.__documentCounts[doc,newTopic] += wordCount
+		self.__vocabCounts[word,oldTopic] -= wordCount
+		self.__vocabCounts[word,newTopic] += wordCount
+		self.__vocabMarginals[newTopic] += wordCount
+		self.__vocabMarginals[oldTopic] -= wordCount
 		self.__assignments[doc,word] = newTopic
 
 	def getExcludedVocabCount(self, word, topic, exclude):
@@ -116,7 +126,10 @@ class LDAModel:
 
 
 	def topicDistribution(self, document, word):
-		#first calculate vocabulary normalization
+		dist = self.topicDistributionUnorm
+		return dist/sum(dist)
+
+	def topicDistributionUnorm(self, document, word):
 		dist = []
 		for i in xrange(self.numTopics):
 			prob = self.getExcludedDocumentCount(document, i, (document,word)) + self.__alpha
@@ -124,7 +137,7 @@ class LDAModel:
 			vocabNorm = self.getExcludedVocabNorm(i, (document,word))
 			dist.append(prob * (vocabProb/vocabNorm))
 
-		return dist/sum(dist)
+		return dist
 
 	def getAssignments(self):
 		return self.__assignments
