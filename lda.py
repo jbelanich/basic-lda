@@ -4,7 +4,7 @@ from scipy import *
 
 class LDAModel:
 
-	def __init__(self, corpus, numTopics = 10, alpha=None, beta=None):
+	def __init__(self, corpus, numTopics = 10, alpha=1, beta=1):
 		"""
 			Initializes a LDAModel based on the given corpus. Alpha and
 			Beta represent the hyperparameters of the model. If none are
@@ -14,20 +14,11 @@ class LDAModel:
 		self.vocabSize = corpus.shape[1]
 		self.numTopics = numTopics
 
-		if not alpha:
-			self.generateAlpha()
-		else:
-			self.__alpha = alpha
+		self.__alpha = alpha
+		self.__beta = beta
 
-		if not beta:
-			self.generateBeta()
-		else:
-			self.__beta = beta
-
-		#self.__corpus = corpus.todense()#sparse.dok_matrix(corpus)
-		self.__corpus = n.zeros([self.__corpus.shape[0], self.__corpus.shape[1]])
-		corpus.todense(out=self.__corpus)
-		self.__assignments = n.zeros([self.__corpus.shape[0], self.__corpus.shape[1]])#sparse.dok_matrix(corpus.shape, dtype=int64)
+		self.__corpus = sparse.lil_matrix(corpus)#sparse.dok_matrix(corpus)
+		self.__assignments = sparse.lil_matrix(corpus.shape)#n.zeros([self.__corpus.shape[0], self.__corpus.shape[1]])#sparse.dok_matrix(corpus.shape, dtype=int64)
 
 		self.__vocabCounts = n.zeros([self.vocabSize, self.numTopics])#sparse.dok_matrix((self.vocabSize,self.numTopics))
 		self.__documentCounts = n.zeros([self.numDocuments, self.numTopics])#sparse.dok_matrix((self.numDocuments, self.numTopics))
@@ -78,7 +69,7 @@ class LDAModel:
 			#for r in set(rows):
 			#	counts.append(self.__vocabCounts[r,k] + self.__beta[r])
 			for r in xrange(self.__vocabCounts.shape[0]):
-				counts.append(self.__vocabCounts[r,k] + self.__beta[r])
+				counts.append(self.__vocabCounts[r,k] + self.__beta)
 
 			self.__vocabMarginals[k] = sum(counts)
 
@@ -131,8 +122,8 @@ class LDAModel:
 		#first calculate vocabulary normalization
 		dist = []
 		for i in xrange(self.numTopics):
-			prob = self.getExcludedDocumentCount(document, i, (document,word)) + self.__alpha[i]
-			vocabProb = self.getExcludedVocabCount(word, i, (document,word)) + self.__beta[word]
+			prob = self.getExcludedDocumentCount(document, i, (document,word)) + self.__alpha
+			vocabProb = self.getExcludedVocabCount(word, i, (document,word)) + self.__beta
 			vocabNorm = self.getExcludedVocabNorm(i, (document,word))
 			dist.append(prob * (vocabProb/vocabNorm))
 
@@ -140,9 +131,3 @@ class LDAModel:
 
 	def getAssignments(self):
 		return self.__assignments
-
-	def generateAlpha(self):
-		self.__alpha = n.ones(self.numTopics)
-
-	def generateBeta(self):
-		self.__beta = n.ones(self.vocabSize)
