@@ -1,3 +1,5 @@
+import numpy as np
+
 class CountMatrix:
 	"""
 		A wrapper class for a list of dicts.
@@ -53,6 +55,11 @@ class CountMatrix:
 			for key in row:
 				yield (i, key)
 
+	def toCorpus(self, vocab):
+		"""
+		Returns a Corpus for this count matrix with the provided vocabulary.
+		"""
+		return Corpus(self._data, vocab)
 
 class Corpus(CountMatrix):
 	"""
@@ -99,3 +106,13 @@ class Corpus(CountMatrix):
 					words.add(self.__vocab[word])
 
 		return words
+
+	def get_top_words_for_topic(self, topic, n=5):
+		wordInd = np.argsort(topic)
+		words = []
+		for i in wordInd:
+			words.append(self.__vocab[i])
+		return ' '.join(words[-n:])
+
+	def getVocab(self):
+		return self.__vocab

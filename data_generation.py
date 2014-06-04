@@ -5,7 +5,8 @@ from corpus import *
 def basicCorpus():
 	texts = loadTexts()
 	vectorizer = CountVectorizer(min_df = 1)
-	return (vectorizer, vectorizer.fit_transform(texts))
+	features = vectorizer.fit_transform(texts)
+	return corpusFromVectorizer(features, vectorizer)
 
 def loadTexts():
 	toLoad = ['./dogs.txt', './cats.txt', 'pets.txt']
@@ -91,3 +92,41 @@ def dailyKosCountMatrix(numDocs=None):
 		docWords[wordIndex-1] = wordCount
 
 	return Corpus(docs, vocab)
+
+def filesToCorpus(vocabFile,countFile, numDocs=None):
+	vocab = []
+	with open(vocabFile, 'r') as vocab_handle:
+		for line in vocab_handle:
+			vocab.append(line)
+
+	wordCounts = np.loadtxt(countFile)
+
+	docs = []
+	lastDoc = wordCounts[0,0]
+	docWords = {}
+	for i in xrange(wordCounts.shape[0]):
+		doc = int(wordCounts[i,0])
+		wordIndex = int(wordCounts[i,1])
+		wordCount = int(wordCounts[i,2])
+
+		if doc != lastDoc:
+			docs.append(docWords)
+			docWords = {}
+			lastDoc = doc
+
+			if numDocs and doc > numDocs:
+				break
+
+		docWords[wordIndex-1] = wordCount
+
+	return Corpus(docs, vocab)
+
+def corpusFromVectorizer(wordCounts, vectorizer):
+	vocab = vectorizer.get_feature_names()
+
+	countMatrix = CountMatrix(numRows=wordCounts.shape[0])
+	rows, cols = wordCounts.nonzero()
+	for row,col in zip(rows,cols):
+		countMatrix[row,col] = int(wordCounts[row,col])
+
+	return countMatrix.toCorpus(vocab)

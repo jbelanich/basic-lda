@@ -3,6 +3,7 @@ import scipy.sparse as sparse
 from scipy import *
 
 from corpus import *
+from util import *
 
 class LDAModel:
 
@@ -57,21 +58,23 @@ class LDAModel:
 		for row, col in self.__corpus.nonzero():
 			#construct probability dist over topic assignments
 			self.removeAssignmentsForWord(row,col)
-			dist = self.topicDistributionUnorm(row,col)
-			newAssignment = self.selectTopic(dist)
+			dist = self.topicDistributionUnormSum(row,col)
+			newAssignment = self.selectTopic(dist)#self.selectTopic(dist)
 			self.updateAssignment(row,col,newAssignment)
 
 	def selectTopic(self, dist):
 		"""
 		Selects a topic from the provided *unnormalized* probability distribution dist.
 		"""
-		u = n.random.uniform(0,sum(dist),1)
+		u = n.random.uniform(0,dist[-1],1)
 
-		runSum = 0
+		#return binary_search(u, dist)
 		for index,prob in enumerate(dist):
-			runSum += prob
-			if u < runSum:
+			if u < prob:
 				return index
+
+	def selectTopicOld(self, dist):
+		return n.random.choice(self.numTopics, p=dist/n.sum(dist))
 
 	def calculateVocabMarginals(self):
 		for k in xrange(self.numTopics):
@@ -115,5 +118,43 @@ class LDAModel:
 
 		return dist
 
+	def topicDistributionUnormSum(self, document, word):
+		dist = []
+		last = 0
+		for i in xrange(self.numTopics):
+			prob = self.__documentCounts[document,i] + self.__alpha
+			vocabProb = self.__vocabCounts[word,i] + self.__beta
+			vocabNorm = self.__vocabMarginals[i] #don't need beta here, its already baked in
+			curr = prob*(vocabProb/vocabNorm)
+			dist.append(last + curr)
+			last = curr
+
+		return dist
+
 	def getAssignments(self):
 		return self.__assignments
+
+	def getTopicProbabilitiesForDocument(self):
+		"""
+		Returns a list where the ith' element is the topic probability distribution for the i'th
+		document.
+		"""
+		latentTopics = []
+		for i in xrange(self.numDocuments):
+			topicDist = (self.__documentCounts[i,:] + self.__alpha) / \
+			(float(sum(self.__documentCounts[i,:])) + (self.numTopics * self.__alpha))
+			latentTopics.append(topicDist)
+
+		return latentTopics
+
+	def getTopics(self):
+		"""
+		Returns a list of the topics in this topic model. A topic is a probability
+		distribution over words, represented as a numpy array.
+		"""
+		topics = []
+		for i in xrange(self.numTopics):
+			topic = (self.__vocabCounts[:,i] + self.__beta)/float(self.__vocabMarginals[i])
+			topics.append(topic)
+
+		return topics
