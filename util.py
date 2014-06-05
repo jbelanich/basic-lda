@@ -3,10 +3,10 @@ from lda import *
 from data_generation import *
 
 def timeExp(corpus):
-	ldaTest = LDAModel(corpus, numTopics=50)
+	ldaTest = LDAModel(corpus, numTopics=100)
 	p = profile.Profile()
 	p.enable()
-	ldaTest.gibbs(1)
+	ldaTest.fastGibbs(10)
 	p.disable()
 	p.print_stats(sort='cumtime')
 
@@ -16,7 +16,7 @@ def baseExp(numDocuments, topics, iterations):
 
 def fullExp(corpus, topics, iterations):
 	ldaTest = LDAModel(corpus, numTopics=topics)
-	ldaTest.gibbs(iterations)
+	ldaTest.fastGibbs(iterations)
 	assignments = ldaTest.getAssignments()
 	return corpus, assignments, ldaTest
 
@@ -28,7 +28,7 @@ def binary_search(value, arr):
 		high = len(arr)-1
 
 		assert(value <= arr[high])
-		
+
 		while(low < high):
 			mid = (low + high)/2
 			if value <= arr[mid]:

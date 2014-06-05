@@ -46,6 +46,13 @@ class CountMatrix:
 			for key in row:
 				yield (key, row[key])
 
+	def columnsInRow(self, row):
+		"""
+		Iterates over the column indicies for the provided row.
+		"""
+		for key in self._data[row]:
+			yield key
+
 	def nonzero(self):
 		"""
 		Iterates over all of the indicies of this CountMatrix. This is,
