@@ -27,9 +27,6 @@ class LDAModel:
 		self.__documentCounts = n.zeros([self.numDocuments, self.numTopics])
 		self.__vocabMarginals = n.zeros([self.numTopics])
 
-		self.__r = n.zeros([self.numTopics])
-		self.__rSum = 0
-
 		self.__s = n.zeros([self.numTopics])
 		self.__sSum = 0
 
@@ -67,6 +64,7 @@ class LDAModel:
 		self.__sSum = n.sum(self.__s)
 
 		self.__vocabCountsCache = WordCountCache(self.__corpus, self.__assignments, self.numTopics, self.__qCoeff)
+		self.__documentCountsCache = DocumentCountCache(self.__corpus, self.__assignments, self.numTopics, self.__vocabMarginals, self.__beta)
 
 	def fastGibbs(self, iterations):
 		for i in xrange(iterations):
@@ -79,13 +77,13 @@ class LDAModel:
 			for w in self.__corpus.columnsInRow(d):
 				self.__vocabCountsCache.buildX(w)
 				qSum = self.__vocabCountsCache.getXSum(w)
-				rSum = self.__rSum
+				rSum = self.__documentCountsCache.getXSum(d)
 				sSum = self.__sSum
 				u = n.random.uniform(0, qSum + self.__sSum + rSum, 1)
 				if u <= sSum:
 					newTopic = self.sCase(u)
 				elif sSum < u <= sSum + rSum:
-					newTopic = self.rCase(u-sSum)
+					newTopic = self.rCase(u-sSum, d)
 				elif sSum + rSum < u <= sSum + rSum + qSum:
 					newTopic = self.qCase(u-sSum-rSum,w)
 				else:
@@ -99,14 +97,9 @@ class LDAModel:
 		Populates r, rSum, and qCoeff
 		"""
 		self.__rSum = 0
-		#self.__docCountsCache.buildX(d)
+		self.__documentCountsCache.buildX(d)
 		for t in xrange(self.numTopics):
 			self.__qCoeff[t] = (self.__alpha + self.__documentCounts[d,t])/self.__vocabMarginals[t]
-			if self.__documentCounts[d,t] > 0:
-				self.__r[t] = (self.__beta * self.__documentCounts[d,t])/(self.__vocabMarginals[t])
-				self.__rSum += self.__r[t]
-			else:
-				self.__r[t] = 0
 
 	def sCase(self,u):
 		sSum = 0
@@ -116,9 +109,9 @@ class LDAModel:
 
 			sSum += s
 
-	def rCase(self, u):
+	def rCase(self, u, d):
 		rSum = 0
-		for t,r in enumerate(self.__r):
+		for t,r in self.__documentCountsCache.getX(d):
 			if rSum < u <= (rSum + r):
 				return t
 
@@ -153,13 +146,6 @@ class LDAModel:
 		self.__s[newTopic] = (self.__alpha * self.__beta)/(self.__vocabMarginals[newTopic])
 		self.__sSum = self.__sSum + (self.__s[oldTopic] - sOldOldTopic) + (self.__s[newTopic] - sOldNewTopic)
 
-		#update r cache
-		rOldOldTopic = self.__r[oldTopic]
-		rOldNewTopic = self.__r[newTopic]
-		self.__r[oldTopic] = (self.__beta * self.__documentCounts[doc,oldTopic])/(self.__vocabMarginals[oldTopic])
-		self.__r[newTopic] = (self.__beta * self.__documentCounts[doc,newTopic])/(self.__vocabMarginals[newTopic])
-		self.__rSum = self.__rSum + (self.__r[newTopic] - rOldNewTopic) + (self.__r[oldTopic] - rOldOldTopic)
-
 		#update qCoeff cache
 		qOldOldTopic = self.__qCoeff[oldTopic]
 		qOldNewTopic = self.__qCoeff[newTopic]
@@ -167,6 +153,7 @@ class LDAModel:
 		self.__qCoeff[newTopic] = (self.__alpha + self.__documentCounts[doc,newTopic])/self.__vocabMarginals[newTopic]
 
 		self.__vocabCountsCache.updateCacheTopics(self.__corpus[doc,word], word, oldTopic, newTopic)
+		self.__documentCountsCache.updateCacheTopics(self.__corpus[doc,word], doc, oldTopic, newTopic)
 
 	def getAssignments(self):
 		return self.__assignments
@@ -184,14 +171,16 @@ class LDAModel:
 
 		return latentTopics
 
-	def getTopics(self):
-		"""
-		Returns a list of the topics in this topic model. A topic is a probability
-		distribution over words, represented as a numpy array.
-		"""
-		topics = []
-		for i in xrange(self.numTopics):
-			topic = (self.__vocabCounts[:,i] + self.__beta)/float(self.__vocabMarginals[i])
-			topics.append(topic)
+##need to fix this
 
-		return topics
+	# def getTopics(self):
+	# 	"""
+	# 	Returns a list of the topics in this topic model. A topic is a probability
+	# 	distribution over words, represented as a numpy array.
+	# 	"""
+	# 	topics = []
+	# 	for i in xrange(self.numTopics):
+	# 		topic = (self.__vocabCounts[:,i] + self.__beta)/float(self.__vocabMarginals[i])
+	# 		topics.append(topic)
+
+	# 	return topics
