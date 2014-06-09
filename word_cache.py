@@ -41,16 +41,11 @@ class CountCache(object):
 		oldIndex = None
 		newIndex = None
 
-		for index,(topic,count) in enumerate(countList):
+		for index,(topic,_) in enumerate(countList):
 			if topic == oldTopic:
 				oldIndex = index
 			elif topic == newTopic:
 				newIndex = index
-
-		if oldIndex is None:
-			print '=========='
-			print oldTopic
-			print countList
 
 		topic,oldCount = countList[oldIndex]
 		updateCount = oldCount - count
@@ -58,14 +53,13 @@ class CountCache(object):
 
 		#the count for newtopic is 0 and so isn't in the array
 		if newIndex is None:
-			if updateCount == 0:
-				countList.pop(oldIndex)
 			countList.append((newTopic, count))
 		else:
 			topic,newCount = countList[newIndex]
 			countList[newIndex] = (topic, newCount + count)
-			if updateCount == 0:
-				countList.pop(oldIndex)
+
+		if updateCount == 0:
+			countList.pop(oldIndex)
 
 		self._data[countIndex] = sorted(countList, key=lambda x: x[1], reverse=True)
 

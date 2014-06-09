@@ -4,9 +4,9 @@ from data_generation import *
 
 def timeExp(corpus=None):
 	if corpus is None:
-		corpus = dailyKosCorpus(100)
+		corpus = dailyKosCorpus(1000)
 
-	ldaTest = LDAModel(corpus, numTopics=50)
+	ldaTest = LDAModel(corpus, numTopics=100)
 	p = profile.Profile()
 	p.enable()
 	ldaTest.fastGibbs(1)
