@@ -1,6 +1,4 @@
-import numpy as n
-import scipy.sparse as sparse
-from scipy import *
+import random
 
 from corpus import *
 from util import *
@@ -24,13 +22,13 @@ class LDAModel:
 		self.__corpus = corpus
 		self.__assignments = CountMatrix(numRows=corpus.numRows())
 
-		self.__documentCounts = n.zeros([self.numDocuments, self.numTopics])
-		self.__vocabMarginals = n.zeros([self.numTopics])
+		self.__documentCounts = CountMatrix(numRows=corpus.numRows())#n.zeros([self.numDocuments, self.numTopics])
+		self.__vocabMarginals = [0 for _ in xrange(self.numTopics)]#n.zeros([self.numTopics])
 
-		self.__s = n.zeros([self.numTopics])
+		self.__s = [0 for _ in xrange(self.numTopics)]#n.zeros([self.numTopics])
 		self.__sSum = 0
 
-		self.__qCoeff = n.zeros([self.numTopics])
+		self.__qCoeff = [0 for _ in xrange(self.numTopics)]#n.zeros([self.numTopics])
 
 		self.initialize()
 
@@ -41,10 +39,10 @@ class LDAModel:
 		"""
 
 		#temporary storage for the vocabulary counts
-		vocabCounts = n.zeros([self.vocabSize, self.numTopics])
+		vocabCounts = CountMatrix(numRows=self.vocabSize)#n.zeros([self.vocabSize, self.numTopics])
 
 		for row, col in self.__corpus.nonzero():
-			assignment = n.random.randint(0,self.numTopics)
+			assignment = random.randint(0,self.numTopics-1)
 			self.__assignments[row,col] = assignment
 			self.__documentCounts[row, assignment] += self.__corpus[row,col]
 			vocabCounts[col, assignment] += self.__corpus[row,col]
@@ -61,7 +59,7 @@ class LDAModel:
 		for t in xrange(self.numTopics):
 			self.__s[t] = (self.__alpha * self.__beta)/(self.__vocabMarginals[t])
 
-		self.__sSum = n.sum(self.__s)
+		self.__sSum = sum(self.__s)
 
 		self.__vocabCountsCache = WordCountCache(self.__corpus, self.__assignments, self.numTopics, self.__qCoeff)
 		self.__documentCountsCache = DocumentCountCache(self.__corpus, self.__assignments, self.numTopics, self.__vocabMarginals, self.__beta)
@@ -79,7 +77,7 @@ class LDAModel:
 				qSum = self.__vocabCountsCache.getXSum(w)
 				rSum = self.__documentCountsCache.getXSum(d)
 				sSum = self.__sSum
-				u = n.random.uniform(0, qSum + self.__sSum + rSum, 1)
+				u = random.uniform(0, qSum + rSum + sSum)#n.random.uniform(0, qSum + self.__sSum + rSum, 1)
 				if u <= sSum:
 					newTopic = self.sCase(u)
 				elif sSum < u <= sSum + rSum:
