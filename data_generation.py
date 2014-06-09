@@ -1,11 +1,11 @@
 from corpus import *
 
-def nipsCountMatrix(numDocs=None):
+def nipsCorpus(numDocs=None):
 	nipsVocab = 'data/nipsvocab.txt'
 	nipsCounts = 'data/docword.nips.txt'
 	return filesToCorpus(nipsVocab,nipsCounts,numDocs)
 
-def dailyKosCountMatrix(numDocs=None):
+def dailyKosCorpus(numDocs=None):
 	kosVocab = 'data/dailykosvocab.txt'
 	kosCounts = 'data/docword.kos.txt'
 	return filesToCorpus(kosVocab,kosCounts,numDocs)
@@ -16,7 +16,6 @@ def filesToCorpus(vocabFile,countFile, numDocs=None):
 	with open(vocabFile, 'r') as vocab_handle:
 		for line in vocab_handle:
 			vocab.append(line)
-
 	
 	with open(countFile, 'r') as count_handle:
 		#First three numbers are D, V, and N

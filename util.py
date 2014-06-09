@@ -4,9 +4,9 @@ from data_generation import *
 
 def timeExp(corpus=None):
 	if corpus is None:
-		corpus = dailyKosCountMatrix(1000)
+		corpus = dailyKosCorpus(100)
 
-	ldaTest = LDAModel(corpus, numTopics=100)
+	ldaTest = LDAModel(corpus, numTopics=50)
 	p = profile.Profile()
 	p.enable()
 	ldaTest.fastGibbs(1)
@@ -14,7 +14,7 @@ def timeExp(corpus=None):
 	p.print_stats(sort='cumtime')
 
 def nipsTimeExp(numDocs=100):
-	corpus = filesToCorpus('./nipsvocab.txt', './docword.nips.txt',numDocs=numDocs)
+	corpus = nipsCorpus()
 	ldaTest = LDAModel(corpus, numTopics=100)
 	p = profile.Profile()
 	p.enable()
@@ -23,7 +23,7 @@ def nipsTimeExp(numDocs=100):
 	p.print_stats(sort='cumtime')
 
 def baseExp(numDocuments, topics, iterations):
-	corpus = dailyKosCountMatrix(numDocuments)
+	corpus = dailyKosCorpus(numDocuments)
 	return fullExp(corpus, topics, iterations)
 
 def fullExp(corpus, topics, iterations):
@@ -33,5 +33,5 @@ def fullExp(corpus, topics, iterations):
 	return corpus, assignments, ldaTest
 
 def nipsExp(numDocuments, topics, iterations):
-	corpus = filesToCorpus('./nipsvocab.txt', './docword.nips.txt',numDocs=numDocuments)
+	corpus = nipsCorpus(numDocuments)
 	return fullExp(corpus, topics, iterations)
