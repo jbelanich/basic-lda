@@ -4,7 +4,7 @@ from data_generation import *
 
 def timeExp(corpus=None):
 	if corpus is None:
-		corpus = dailyKosCorpus(1000)
+		corpus = dailyKosCorpus()
 
 	ldaTest = LDAModel(corpus, numTopics=100)
 	p = profile.Profile()

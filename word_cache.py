@@ -35,6 +35,21 @@ class CountCache(object):
 			self._xCache.append((topic, val))
 			self._xSum += val
 
+	def slice(self, topic):
+		"""
+		Generator that gives you an array of length len(self._data) where
+		arr[i] gives you count in (topic,count) in self._data[i].
+		"""
+		for countList in self._data:
+			#find the corresponding entry
+			count = 0
+			for t,c in countList:
+				if topic == t:
+					count = c
+					break
+
+			yield count
+
 	def updateCacheTopics(self, count, countIndex, oldTopic, newTopic):
 		countList = self._data[countIndex]
 

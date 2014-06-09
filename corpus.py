@@ -113,12 +113,12 @@ class Corpus(CountMatrix):
 		return words
 
 	def get_top_words_for_topic(self, topic, n=5):
-		wordXweight = zip(xrange(self.vocabSize),topic)
-		wordXweight = sorted(wordXweight, key=lambda x: x[1], rev=True)
+		wordXweight = zip(xrange(self.vocabSize()),topic)
+		wordXweight = sorted(wordXweight, key=lambda x: x[1], reverse=True)
 		words = []
 		for word,weight in wordXweight:
 			words.append(self.__vocab[word])
-		return ' '.join(words[-n:])
+		return ' '.join(words[0:n])
 
 	def getVocab(self):
 		return self.__vocab

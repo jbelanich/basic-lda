@@ -169,6 +169,16 @@ class LDAModel:
 
 		return latentTopics
 
+	def getTopics(self):
+		topics = []
+		for t in xrange(self.numTopics):
+			topic = []
+			for count in self.__vocabCountsCache.slice(t):
+				val = (count + self.__beta)/float(self.__vocabMarginals[t])
+				topic.append(val)
+			topics.append(topic)
+		return topics
+
 ##need to fix this
 
 	# def getTopics(self):
