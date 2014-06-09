@@ -38,8 +38,8 @@ class CountCache(object):
 	def updateCacheTopics(self, count, countIndex, oldTopic, newTopic):
 		countList = self._data[countIndex]
 
-		oldIndex = -1
-		newIndex = -1
+		oldIndex = None
+		newIndex = None
 
 		for index,(topic,count) in enumerate(countList):
 			if topic == oldTopic:
@@ -47,19 +47,25 @@ class CountCache(object):
 			elif topic == newTopic:
 				newIndex = index
 
+		if oldIndex is None:
+			print '=========='
+			print oldTopic
+			print countList
+
 		topic,oldCount = countList[oldIndex]
 		updateCount = oldCount - count
 		countList[oldIndex] = (topic,updateCount)
 
 		#the count for newtopic is 0 and so isn't in the array
-		if newIndex == -1:
+		if newIndex is None:
+			if updateCount == 0:
+				countList.pop(oldIndex)
 			countList.append((newTopic, count))
 		else:
-			topic,oldCount = countList[newIndex]
-			countList[newIndex] = (topic, oldCount + count)
-
-		if updateCount == 0:
-			countList.pop(oldIndex)
+			topic,newCount = countList[newIndex]
+			countList[newIndex] = (topic, newCount + count)
+			if updateCount == 0:
+				countList.pop(oldIndex)
 
 		self._data[countIndex] = sorted(countList, key=lambda x: x[1], reverse=True)
 
