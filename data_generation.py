@@ -19,10 +19,13 @@ def filesToCorpus(vocabFile,countFile, numDocs=None):
 	
 	with open(countFile, 'r') as count_handle:
 		#First three numbers are D, V, and N
-		[numDocs,numWords,totalCounts] = [int(count_handle.readline()) \
+		[docCount,wordCount,totalCounts] = [int(count_handle.readline()) \
 			for _ in xrange(3)]
 
-		countMatrix = CountMatrix(numRows=numDocs)
+		if numDocs and docCount > numDocs:
+			docCount = numDocs
+
+		countMatrix = CountMatrix(numRows=docCount)
 		for line in count_handle:
 			[doc,word,count] = [int(x) for x in line.split()]
 

@@ -1,5 +1,3 @@
-import numpy as np
-
 class CountMatrix:
 	"""
 		A wrapper class for a list of dicts.
@@ -115,10 +113,11 @@ class Corpus(CountMatrix):
 		return words
 
 	def get_top_words_for_topic(self, topic, n=5):
-		wordInd = np.argsort(topic)
+		wordXweight = zip(xrange(self.vocabSize),topic)
+		wordXweight = sorted(wordXweight, key=lambda x: x[1], rev=True)
 		words = []
-		for i in wordInd:
-			words.append(self.__vocab[i])
+		for word,weight in wordXweight:
+			words.append(self.__vocab[word])
 		return ' '.join(words[-n:])
 
 	def getVocab(self):
