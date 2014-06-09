@@ -1,4 +1,4 @@
-import numpy as n
+from corpus import *
 
 class CountCache(object):
 
@@ -79,16 +79,14 @@ class WordCountCache(CountCache):
 		for w in xrange(self._corpus.vocabSize()):
 			self._data.append([])
 
-		vocabCounts = n.zeros([self._corpus.vocabSize(), self._numTopics])
+		vocabCounts = CountMatrix(numRows=self._corpus.vocabSize())
 
 		for row, col in self._corpus.nonzero():
 			assignment = self._assignments[row,col]
 			vocabCounts[col, assignment] += self._corpus[row,col]
 
-		for w in xrange(len(self._data)):
-			for t in xrange(self._numTopics):
-				if vocabCounts[w, t] > 0:
-					self._data[w].append((t, vocabCounts[w,t]))
+		for w,t in vocabCounts.nonzero():
+			self._data[w].append((t, vocabCounts[w,t]))
 
 		#sort each bucket in descending order
 		for w,wordList in enumerate(self._data):
@@ -108,16 +106,14 @@ class DocumentCountCache(CountCache):
 		for d in xrange(self._corpus.numDocuments()):
 			self._data.append([])
 
-		docCounts = n.zeros([self._corpus.numDocuments(), self._numTopics])
+		docCounts = CountMatrix(numRows=self._corpus.numDocuments())#n.zeros([self._corpus.numDocuments(), self._numTopics])
 
 		for row,col in self._corpus.nonzero():
 			assignment = self._assignments[row,col]
 			docCounts[row,assignment] += self._corpus[row,col]
 
-		for d in xrange(len(self._data)):
-			for t in xrange(self._numTopics):
-				if docCounts[d,t] > 0:
-					self._data[d].append((t, docCounts[d,t]))
+		for d,t in docCounts.nonzero():
+			self._data[d].append((t, docCounts[d,t]))
 
 		for d,docList in enumerate(self._data):
 			self._data[d] = sorted(docList, key=lambda x: x[1], reverse=True)
