@@ -185,17 +185,3 @@ class LDAModel:
 				topic.append(val)
 			topics.append(topic)
 		return topics
-
-##need to fix this
-
-	# def getTopics(self):
-	# 	"""
-	# 	Returns a list of the topics in this topic model. A topic is a probability
-	# 	distribution over words, represented as a numpy array.
-	# 	"""
-	# 	topics = []
-	# 	for i in xrange(self.numTopics):
-	# 		topic = (self.__vocabCounts[:,i] + self.__beta)/float(self.__vocabMarginals[i])
-	# 		topics.append(topic)
-
-	# 	return topics
