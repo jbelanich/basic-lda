@@ -50,6 +50,41 @@ class CountCache(object):
 
 			yield count
 
+	def removeCacheTopics(self, count, countIndex, oldTopic):
+		countList = self._data[countIndex]
+
+		oldIndex = None
+		for index,(topic,_) in enumerate(countList):
+			if topic == oldTopic:
+				oldIndex = index
+				break
+
+		topic,oldCount = countList[oldIndex]
+		if (oldCount - count) == 0:
+			countList.pop(oldIndex)
+		else:
+			countList[oldIndex] = (topic, oldCount - count)
+
+		#we do not sort here, defer to the inevitable addCacheTopics call.
+
+	def addCacheTopics(self, count, countIndex, newTopic):
+		countList = self._data[countIndex]
+
+		newIndex = None
+
+		for index,(topic,_) in enumerate(countList):
+			if topic == newTopic:
+				newIndex = index
+				break
+
+		if newIndex is None:
+			countList.append((newTopic,count))
+		else:
+			_,currentCount = countList[newIndex]
+			countList[newIndex] = (newTopic, count + currentCount)
+
+		self._data[countIndex] = sorted(countList, key=lambda x: x[1], reverse=True)
+
 	def updateCacheTopics(self, count, countIndex, oldTopic, newTopic):
 		countList = self._data[countIndex]
 

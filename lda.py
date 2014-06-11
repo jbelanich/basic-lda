@@ -73,6 +73,8 @@ class LDAModel:
 		for d in xrange(self.__corpus.numDocuments()):
 			self.buildCachedValuesForDocument(d)
 			for w in self.__corpus.columnsInRow(d):
+				self.__vocabCountsCache.removeCacheTopics(self.__corpus[d,w], w, self.__assignments[d,w])
+				self.__documentCountsCache.removeCacheTopics(self.__corpus[d,w], d, self.__assignments[d,w])
 				self.__vocabCountsCache.buildX(w)
 				qSum = self.__vocabCountsCache.getXSum(w)
 				rSum = self.__documentCountsCache.getXSum(d)
@@ -89,6 +91,9 @@ class LDAModel:
 
 				if newTopic != self.__assignments[d,w]:
 					self.updateCachedValues(d,w,newTopic)
+
+				self.__vocabCountsCache.addCacheTopics(self.__corpus[d,w], w, newTopic)
+				self.__documentCountsCache.addCacheTopics(self.__corpus[d,w],d,newTopic)
 
 	def buildCachedValuesForDocument(self,d):
 		"""
@@ -150,8 +155,8 @@ class LDAModel:
 		self.__qCoeff[oldTopic] = (self.__alpha + self.__documentCounts[doc,oldTopic])/self.__vocabMarginals[oldTopic]
 		self.__qCoeff[newTopic] = (self.__alpha + self.__documentCounts[doc,newTopic])/self.__vocabMarginals[newTopic]
 
-		self.__vocabCountsCache.updateCacheTopics(self.__corpus[doc,word], word, oldTopic, newTopic)
-		self.__documentCountsCache.updateCacheTopics(self.__corpus[doc,word], doc, oldTopic, newTopic)
+		#self.__vocabCountsCache.updateCacheTopics(self.__corpus[doc,word], word, oldTopic, newTopic)
+		#self.__documentCountsCache.updateCacheTopics(self.__corpus[doc,word], doc, oldTopic, newTopic)
 
 	def getAssignments(self):
 		return self.__assignments
