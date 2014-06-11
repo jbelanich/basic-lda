@@ -31,7 +31,7 @@ class CountCache(object):
 		self._xCache = []
 		self._xSum = 0
 
-		for topic,count in countList:
+		for count,topic in countList:
 			val = self.calculateCacheValue(count,topic)
 			self._xCache.append((topic, val))
 			self._xSum += val
@@ -44,7 +44,7 @@ class CountCache(object):
 		for countList in self._data:
 			#find the corresponding entry
 			count = 0
-			for t,c in countList:
+			for c,t in countList:
 				if topic == t:
 					count = c
 					break
@@ -56,65 +56,65 @@ class CountCache(object):
 
 		oldIndex = None
 		scores = []
-		for index,(topic,score) in enumerate(countList):
+		for index,(score,topic) in enumerate(countList):
 			scores.append(score)
 			if topic == oldTopic:
 				oldIndex = index
 
 		scores.pop(oldIndex)
-		topic,oldCount = countList.pop(oldIndex)
+		oldCount,topic = countList.pop(oldIndex)
 		updateCount = oldCount - count
 		if updateCount > 0:
 			locToInsert = bisect(scores, updateCount)
-			countList.insert(locToInsert, (topic,updateCount))
+			countList.insert(locToInsert, (updateCount,topic))
 
 	def addCacheTopics(self, count, countIndex, newTopic):
 		countList = self._data[countIndex]
 
 		newIndex = None
 		scores = []
-		for index,(topic,score) in enumerate(countList):
+		for index,(score,topic) in enumerate(countList):
 			scores.append(score)
 			if topic == newTopic:
 				newIndex = index
 
 		if newIndex is None:
 			locToInsert = bisect(scores, count)
-			countList.insert(locToInsert, (newTopic,count))
+			countList.insert(locToInsert, (count,newTopic))
 		else:
-			_,newCount = countList.pop(newIndex)
+			newCount,_ = countList.pop(newIndex)
 			scores.pop(newIndex)
 			updateCount = newCount + count
 			locToInsert = bisect(scores,updateCount)
-			countList.insert(locToInsert, (newTopic, updateCount))
+			countList.insert(locToInsert, (updateCount,newTopic))
 
-	def updateCacheTopics(self, count, countIndex, oldTopic, newTopic):
-		countList = self._data[countIndex]
+	# def updateCacheTopics(self, count, countIndex, oldTopic, newTopic):
+	# 	countList = self._data[countIndex]
 
-		oldIndex = None
-		newIndex = None
+	# 	oldIndex = None
+	# 	newIndex = None
 
-		for index,(topic,_) in enumerate(countList):
-			if topic == oldTopic:
-				oldIndex = index
-			elif topic == newTopic:
-				newIndex = index
+	# 	for index,(topic,_) in enumerate(countList):
+	# 		if topic == oldTopic:
+	# 			oldIndex = index
+	# 		elif topic == newTopic:
+	# 			newIndex = index
 
-		topic,oldCount = countList[oldIndex]
-		updateCount = oldCount - count
-		countList[oldIndex] = (topic,updateCount)
+	# 	topic,oldCount = countList[oldIndex]
+	# 	updateCount = oldCount - count
+	# 	countList[oldIndex] = (topic,updateCount)
 
-		#the count for newtopic is 0 and so isn't in the array
-		if newIndex is None:
-			countList.append((newTopic, count))
-		else:
-			topic,newCount = countList[newIndex]
-			countList[newIndex] = (topic, newCount + count)
+	# 	#the count for newtopic is 0 and so isn't in the array
+	# 	if newIndex is None:
+	# 		countList.append((newTopic, count))
+	# 	else:
+	# 		topic,newCount = countList[newIndex]
+	# 		countList[newIndex] = (topic, newCount + count)
 
-		if updateCount == 0:
-			countList.pop(oldIndex)
+	# 	if updateCount == 0:
+	# 		countList.pop(oldIndex)
 
-		self._data[countIndex] = sorted(countList, key=lambda x: x[1], reverse=True)
+	# 	self._data[countIndex] = sorted(countList, key=lambda x: x[1], reverse=True)
 
 class WordCountCache(CountCache):
 
@@ -133,11 +133,11 @@ class WordCountCache(CountCache):
 			vocabCounts[col, assignment] += self._corpus[row,col]
 
 		for w,t in vocabCounts.nonzero():
-			self._data[w].append((t, vocabCounts[w,t]))
+			self._data[w].append((vocabCounts[w,t],t))
 
 		#sort each bucket in descending order
 		for w,wordList in enumerate(self._data):
-			self._data[w] = sorted(wordList, key=lambda x: x[1], reverse=True)
+			self._data[w] = sorted(wordList, key=lambda x: x[0], reverse=True)
 
 	def calculateCacheValue(self, count, topic):
 		return count * self._qCoeffs[topic]
@@ -160,10 +160,10 @@ class DocumentCountCache(CountCache):
 			docCounts[row,assignment] += self._corpus[row,col]
 
 		for d,t in docCounts.nonzero():
-			self._data[d].append((t, docCounts[d,t]))
+			self._data[d].append((docCounts[d,t],t))
 
 		for d,docList in enumerate(self._data):
-			self._data[d] = sorted(docList, key=lambda x: x[1], reverse=True)
+			self._data[d] = sorted(docList, key=lambda x: x[0], reverse=True)
 
 	def calculateCacheValue(self, count, topic):
 		return (count * self._beta) / self._vocabMarginals[topic]
