@@ -1,4 +1,5 @@
 from corpus import *
+from bisect import *
 
 class CountCache(object):
 
@@ -54,36 +55,38 @@ class CountCache(object):
 		countList = self._data[countIndex]
 
 		oldIndex = None
-		for index,(topic,_) in enumerate(countList):
+		scores = []
+		for index,(topic,score) in enumerate(countList):
+			scores.append(score)
 			if topic == oldTopic:
 				oldIndex = index
-				break
 
-		topic,oldCount = countList[oldIndex]
-		if (oldCount - count) == 0:
-			countList.pop(oldIndex)
-		else:
-			countList[oldIndex] = (topic, oldCount - count)
-
-		#we do not sort here, defer to the inevitable addCacheTopics call.
+		scores.pop(oldIndex)
+		topic,oldCount = countList.pop(oldIndex)
+		updateCount = oldCount - count
+		if updateCount > 0:
+			locToInsert = bisect(scores, updateCount)
+			countList.insert(locToInsert, (topic,updateCount))
 
 	def addCacheTopics(self, count, countIndex, newTopic):
 		countList = self._data[countIndex]
 
 		newIndex = None
-
-		for index,(topic,_) in enumerate(countList):
+		scores = []
+		for index,(topic,score) in enumerate(countList):
+			scores.append(score)
 			if topic == newTopic:
 				newIndex = index
-				break
 
 		if newIndex is None:
-			countList.append((newTopic,count))
+			locToInsert = bisect(scores, count)
+			countList.insert(locToInsert, (newTopic,count))
 		else:
-			_,currentCount = countList[newIndex]
-			countList[newIndex] = (newTopic, count + currentCount)
-
-		self._data[countIndex] = sorted(countList, key=lambda x: x[1], reverse=True)
+			_,newCount = countList.pop(newIndex)
+			scores.pop(newIndex)
+			updateCount = newCount + count
+			locToInsert = bisect(scores,updateCount)
+			countList.insert(locToInsert, (newTopic, updateCount))
 
 	def updateCacheTopics(self, count, countIndex, oldTopic, newTopic):
 		countList = self._data[countIndex]
