@@ -73,8 +73,10 @@ class LDAModel:
 		for d in xrange(self.__corpus.numDocuments()):
 			self.buildCachedValuesForDocument(d)
 			for w in self.__corpus.columnsInRow(d):
-				self.__vocabCountsCache.removeCacheTopics(self.__corpus[d,w], w, self.__assignments[d,w])
-				self.__documentCountsCache.removeCacheTopics(self.__corpus[d,w], d, self.__assignments[d,w])
+				wordCount = self.__corpus[d,w]
+				currAssignment = self.__assignments[d,w]
+				self.__vocabCountsCache.removeCacheTopics(wordCount, w, currAssignment)
+				self.__documentCountsCache.removeCacheTopics(wordCount, d, currAssignment)
 				self.__vocabCountsCache.buildX(w)
 				qSum = self.__vocabCountsCache.getXSum(w)
 				rSum = self.__documentCountsCache.getXSum(d)
@@ -89,11 +91,11 @@ class LDAModel:
 				else:
 					assert(False)
 
-				if newTopic != self.__assignments[d,w]:
+				if newTopic != currAssignment:
 					self.updateCachedValues(d,w,newTopic)
 
-				self.__vocabCountsCache.addCacheTopics(self.__corpus[d,w], w, newTopic)
-				self.__documentCountsCache.addCacheTopics(self.__corpus[d,w],d,newTopic)
+				self.__vocabCountsCache.addCacheTopics(wordCount, w, newTopic)
+				self.__documentCountsCache.addCacheTopics(wordCount,d,newTopic)
 
 	def buildCachedValuesForDocument(self,d):
 		"""
