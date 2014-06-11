@@ -22,13 +22,13 @@ class LDAModel:
 		self.__corpus = corpus
 		self.__assignments = CountMatrix(numRows=corpus.numRows())
 
-		self.__documentCounts = CountMatrix(numRows=corpus.numRows())#n.zeros([self.numDocuments, self.numTopics])
-		self.__vocabMarginals = [0 for _ in xrange(self.numTopics)]#n.zeros([self.numTopics])
+		self.__documentCounts = CountMatrix(numRows=corpus.numRows())
+		self.__vocabMarginals = [0 for _ in xrange(self.numTopics)]
 
-		self.__s = [0 for _ in xrange(self.numTopics)]#n.zeros([self.numTopics])
+		self.__s = [0 for _ in xrange(self.numTopics)]
 		self.__sSum = 0
 
-		self.__qCoeff = [0 for _ in xrange(self.numTopics)]#n.zeros([self.numTopics])
+		self.__qCoeff = [0 for _ in xrange(self.numTopics)]
 
 		self.initialize()
 
@@ -39,7 +39,7 @@ class LDAModel:
 		"""
 
 		#temporary storage for the vocabulary counts
-		vocabCounts = CountMatrix(numRows=self.vocabSize)#n.zeros([self.vocabSize, self.numTopics])
+		vocabCounts = CountMatrix(numRows=self.vocabSize)
 
 		for row, col in self.__corpus.nonzero():
 			assignment = random.randint(0,self.numTopics-1)
@@ -75,13 +75,17 @@ class LDAModel:
 			for w in self.__corpus.columnsInRow(d):
 				wordCount = self.__corpus[d,w]
 				currAssignment = self.__assignments[d,w]
+
 				self.__vocabCountsCache.removeCacheTopics(wordCount, w, currAssignment)
 				self.__documentCountsCache.removeCacheTopics(wordCount, d, currAssignment)
+
 				self.__vocabCountsCache.buildX(w)
+
 				qSum = self.__vocabCountsCache.getXSum(w)
 				rSum = self.__documentCountsCache.getXSum(d)
 				sSum = self.__sSum
-				u = random.uniform(0, qSum + rSum + sSum)#n.random.uniform(0, qSum + self.__sSum + rSum, 1)
+
+				u = random.uniform(0, qSum + rSum + sSum)
 				if u <= sSum:
 					newTopic = self.sCase(u)
 				elif sSum < u <= sSum + rSum:
@@ -157,8 +161,6 @@ class LDAModel:
 		self.__qCoeff[oldTopic] = (self.__alpha + self.__documentCounts[doc,oldTopic])/self.__vocabMarginals[oldTopic]
 		self.__qCoeff[newTopic] = (self.__alpha + self.__documentCounts[doc,newTopic])/self.__vocabMarginals[newTopic]
 
-		#self.__vocabCountsCache.updateCacheTopics(self.__corpus[doc,word], word, oldTopic, newTopic)
-		#self.__documentCountsCache.updateCacheTopics(self.__corpus[doc,word], doc, oldTopic, newTopic)
 
 	def getAssignments(self):
 		return self.__assignments
